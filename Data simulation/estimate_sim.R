@@ -81,7 +81,11 @@ code <- nimbleCode({
       Y[visit.tag,site.tag] ~ dcat(omega[C[visit.tag,site.tag],1:(n.species+1)])
     }
   }
-  
+  #estimating contrasts
+      z021 <- beta0[2]- beta0[1]
+    z031 <- beta0[3] - beta0[1]
+    z121 <- beta1[2]- beta1[1]
+    z131 <- beta1[3] - beta1[1]
 })
 
 # Retrieving data from the simulated data
@@ -143,8 +147,7 @@ mwtc <- nimbleModel(code,data = idm_data,
 Cmwtc <- compileNimble(mwtc, 
                        showCompilerOutput = FALSE)
 
-
-mcmcconf <- configureMCMC(Cmwtc, monitors = c("beta0","beta1","omega", "prop","lambda"))
+  mcmcconf <- configureMCMC(Cmwtc, monitors = c("beta0","beta1","omega", "z021", "z031", "z121", "z131"))
 
 Rmcmc <- buildMCMC(mcmcconf, 
                    enableWAIC =FALSE)
@@ -188,12 +191,23 @@ Rhat_data <- subset_Rhat$data[,5]
 all_rhat <- all(Rhat_data < 1.05) #Rhat is less than 1.05
 N_over_rhat <-length(which(Rhat_data > 1.05))/length(subset_parameters) #Rhats over 1.04
 
-beta0 <- output[(1:const$n.species),2]
-beta1 <- output[((const$n.species+1):(const$n.species*2)),2]
-lambda<- matrix(output[((const$n.species*2)+1) : (((const$n.species*2))+ (const$n.species*(const$n.sites))),2], nrow=const$n.species, ncol=const$n.sites, byrow=FALSE)
-omega <- matrix(output[((((const$n.species*2))+ (const$n.species*(const$n.sites)))+1): ((((const$n.species*2))+ (const$n.species*(const$n.sites)))+(const$n.species*(const$n.species+1))),2], nrow=const$n.species, ncol=(const$n.species+1), byrow=FALSE)
-prop <-matrix(tail(output[,2],(const$n.species*(const$n.sites))),nrow=const$n.species, ncol=const$n.sites, byrow=FALSE)
-return(list(omega=omega, beta0=beta0, beta1 = beta1, prop=prop, lambda=lambda,N_over_rhat=N_over_rhat, all_rhat = all_rhat))
+  #estimate coverage
+coverage <- function(output){
+    ifelse(output[4] <= output[6] & output[5] >= output[6],1,0)
+  }
+  true_values <- c(0.7, 0.1, 0, 0.05,0.8, 0, 0.13, 0.05, 0.9, 0.12,0.05,0.1,
+                   2,1,-2,-4)
+  df <- cbind(output[7:22,], true_values)
+  coveragevalues = apply(df,1, coverage)
+  returnedcoverages <- c(coveragevalues,N_over_rhat=N_over_rhat, all_rhat = all_rhat)
+  
+  #return results
+  beta0 <- output[(1:const$n.species),2]
+  beta1 <- output[((const$n.species+1):(const$n.species*2)),2]
+  #lambda<- matrix(output[((const$n.species*2)+1) : (((const$n.species*2))+ (const$n.species*(const$n.sites))),2], nrow=const$n.species, ncol=const$n.sites, byrow=FALSE)
+  omega <- matrix(output[((const$n.species*2)+ 1): ((((const$n.species*2)))+(const$n.species*(const$n.species+1))),2], nrow=const$n.species, ncol=(const$n.species+1), byrow=FALSE)
+  contrasts <- tail(output[,2],4)
+  return(list(omega=omega, beta0=beta0, beta1 = beta1,contrasts=contrasts, returnedcovarages=returnedcoverages))
 }
 
 #Number of clusters

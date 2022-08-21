@@ -21,14 +21,14 @@ B: R scripts
 a. Simulation Study
 The code should be run in this order for the results presented in the paper:
 - simulation.R is used to simulate the data that is needed for the model.
-- estimate_sim.R is used to fit the model and estimate the parameters in NIMBLE
-- simulation_result_plot.R is used to summarize the results from the model fitting in tables and graphs
+- estimate_simulation.R is used to fit the model and estimate the parameters in NIMBLE
+- plot_simulations.R is used to summarize the results from the model fitting in tables and graphs
 
 b. Application to Butterfly data
 The code should be run in this order for the results presented in the paper:
 - Data_formatting.R is used to format the data that is needed for the model. Needs the queen.csv, viceroy.csv and monarch.csv as inputs.
-- fitting_model_data.R is used to fit the model with INLA and NIMBLE.
-- data_results_plot.R is used to summarise the results from fitting_model_data.R and present results in Tables and graphs.
+- nimble.R is used to fit the model with INLA and NIMBLE.
+- plot for data.R is used to summarise the results from nimble.R and present results in Tables and graphs.
 
 
 
